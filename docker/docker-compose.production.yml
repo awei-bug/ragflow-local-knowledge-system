@@ -1,0 +1,54 @@
+x-ragflow-production-environment: &ragflow-production-environment
+  RAGFLOW_DEPLOYMENT_MODE: production
+  RAGFLOW_SECRET_KEY: ${RAGFLOW_SECRET_KEY:?RAGFLOW_SECRET_KEY must be injected by the production secret manager}
+  MYSQL_PASSWORD: ${MYSQL_PASSWORD:?MYSQL_PASSWORD must be injected by the production secret manager}
+  REDIS_PASSWORD: ${REDIS_PASSWORD:?REDIS_PASSWORD must be injected by the production secret manager}
+  MINIO_PASSWORD: ${MINIO_PASSWORD:?MINIO_PASSWORD must be injected by the production secret manager}
+  ELASTIC_PASSWORD: ${ELASTIC_PASSWORD:-}
+  OPENSEARCH_PASSWORD: ${OPENSEARCH_PASSWORD:-}
+  OCEANBASE_PASSWORD: ${OCEANBASE_PASSWORD:-}
+  SEEKDB_PASSWORD: ${SEEKDB_PASSWORD:-}
+
+services:
+  ragflow-cpu:
+    environment: *ragflow-production-environment
+    ports: !override
+      - ${SVR_WEB_HTTP_PORT}:80
+      - ${SVR_WEB_HTTPS_PORT}:443
+
+  ragflow-gpu:
+    environment: *ragflow-production-environment
+    ports: !override
+      - ${SVR_WEB_HTTP_PORT}:80
+      - ${SVR_WEB_HTTPS_PORT}:443
+
+  es01:
+    ports: !reset []
+  opensearch01:
+    ports: !reset []
+  infinity:
+    ports: !reset []
+  oceanbase:
+    ports: !reset []
+  seekdb:
+    ports: !reset []
+  sandbox-executor-manager:
+    ports: !reset []
+  mysql:
+    ports: !reset []
+  minio:
+    ports: !reset []
+  redis:
+    ports: !reset []
+  jaeger:
+    ports: !reset []
+  nats:
+    ports: !reset []
+  tei-cpu:
+    ports: !reset []
+  tei-gpu:
+    ports: !reset []
+  kibana:
+    ports: !reset []
+  clickhouse:
+    ports: !reset []

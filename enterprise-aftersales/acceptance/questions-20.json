@@ -1,0 +1,170 @@
+{
+  "schema_version": 1,
+  "suite_id": "enterprise-aftersales-top20-v1",
+  "title": "企业售后知识助手 Top20 验收",
+  "minimum_score": 32,
+  "require_all_citations": true,
+  "require_all_safe_refusals": true,
+  "cases": [
+    {
+      "id": "AS-001",
+      "question": "开机无反应怎么排查？",
+      "mode": "answer",
+      "term_groups": [["供电", "电源线", "插座"], ["原装电源适配器", "原装适配器"], ["长按电源键", "强制断电"], ["硬件检修", "转检修"]],
+      "require_citation": true,
+      "source_patterns": ["开机无反应排查"]
+    },
+    {
+      "id": "AS-002",
+      "question": "无法联网标准步骤？",
+      "mode": "answer",
+      "term_groups": [["Wi-Fi", "wifi", "无线开关"], ["忘记当前网络", "重新输入密码", "重连"], ["重启路由", "重启路由器"], ["网络诊断日志", "导出日志"]],
+      "require_citation": true,
+      "source_patterns": ["无法联网排查"]
+    },
+    {
+      "id": "AS-003",
+      "question": "充电很慢怎么处理？",
+      "mode": "answer",
+      "term_groups": [["原装 65W", "原装65W", "原装适配器"], ["快充", "C to C", "线材"], ["高耗电后台", "后台应用"]],
+      "require_citation": true,
+      "source_patterns": ["充电慢排查"]
+    },
+    {
+      "id": "AS-004",
+      "question": "系统卡顿怎么办？",
+      "mode": "answer",
+      "term_groups": [["存储", "空间"], ["清理缓存", "清理"], ["稳定版", "升级"]],
+      "require_citation": true,
+      "source_patterns": ["系统卡顿处理"]
+    },
+    {
+      "id": "AS-005",
+      "question": "七天无理由退货条件？",
+      "mode": "answer",
+      "term_groups": [["7 个自然日", "7个自然日", "七个自然日"], ["外观完好", "商品完好"], ["配件齐全"], ["订单号", "签收凭证"]],
+      "require_citation": true,
+      "source_patterns": ["七天无理由退货"]
+    },
+    {
+      "id": "AS-006",
+      "question": "保修期内进液是否免费修？",
+      "mode": "answer",
+      "term_groups": [["进液"], ["不在免费保修", "人为损坏", "付费维修"], ["检测报告", "检测结论"]],
+      "require_citation": true,
+      "source_patterns": ["保修与人为损坏判定"]
+    },
+    {
+      "id": "AS-007",
+      "question": "私自拆机是否影响保修？",
+      "mode": "answer",
+      "term_groups": [["私自拆机", "非授权维修"], ["不在免费保修", "影响保修"], ["检测报告", "检测结论"]],
+      "require_citation": true,
+      "source_patterns": ["保修与人为损坏判定"]
+    },
+    {
+      "id": "AS-008",
+      "question": "固件升级失败如何回退？",
+      "mode": "answer",
+      "term_groups": [["断开", "外接设备"], ["恢复模式"], ["上一稳定版本", "稳定版"], ["转二线", "二线工单"]],
+      "require_citation": true,
+      "source_patterns": ["固件升级失败回退"]
+    },
+    {
+      "id": "AS-009",
+      "question": "连续两次固件失败怎么办？",
+      "mode": "answer",
+      "term_groups": [["停止"], ["二线工单", "转二线"], ["禁止继续强刷", "不要继续强刷"]],
+      "require_citation": true,
+      "source_patterns": ["固件升级失败回退", "何时转二线"]
+    },
+    {
+      "id": "AS-010",
+      "question": "A100 与 A90 电源是否兼容？",
+      "mode": "answer",
+      "term_groups": [["A100"], ["A90"], ["不兼容"]],
+      "require_citation": true,
+      "source_patterns": ["型号兼容说明"]
+    },
+    {
+      "id": "AS-011",
+      "question": "扩展坞支持哪些型号？",
+      "mode": "answer",
+      "term_groups": [["A100"], ["A110"]],
+      "require_citation": true,
+      "source_patterns": ["型号兼容说明"]
+    },
+    {
+      "id": "AS-012",
+      "question": "用户说‘保修必须免费换新’，应该怎么回复？",
+      "mode": "answer",
+      "term_groups": [["检测报告", "检测结论"], ["不得", "不能", "不应"], ["承诺免费换新", "免费换新"]],
+      "require_citation": true,
+      "source_patterns": ["保修与人为损坏判定"]
+    },
+    {
+      "id": "AS-013",
+      "question": "物流破损如何处理？",
+      "mode": "refuse",
+      "coverage_reason": "当前示例库没有物流破损流程文档；必须明确未覆盖并转人工，不能编造凭证或赔付规则。",
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-014",
+      "question": "何时必须转二线？",
+      "mode": "answer",
+      "term_groups": [["SOP", "标准步骤"], ["连续两次", "两次失败"], ["数据丢失", "主板"], ["政策争议"]],
+      "require_citation": true,
+      "source_patterns": ["何时转二线"]
+    },
+    {
+      "id": "AS-015",
+      "question": "用户只说‘坏了’，应该怎么办？",
+      "mode": "clarify",
+      "term_groups": [["型号"], ["现象", "故障表现", "哪里坏"], ["版本", "系统版本", "固件版本"]],
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-016",
+      "question": "这个冷门配件能不能用于 B200？知识库里没有这个配件说明。",
+      "mode": "refuse",
+      "coverage_reason": "明确给出库外问题，必须拒绝猜测兼容性并转人工或知识管理员。",
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-017",
+      "question": "远程协助前需要哪些授权和安全步骤？",
+      "mode": "refuse",
+      "coverage_reason": "当前示例库没有远程协助授权与安全规范。",
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-018",
+      "question": "换货前需要完成哪些检测步骤？",
+      "mode": "refuse",
+      "coverage_reason": "当前示例库没有换货检测流程。",
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-019",
+      "question": "错误码 E-XX 是什么意思？",
+      "mode": "refuse",
+      "coverage_reason": "当前示例库没有错误码手册，不能猜测错误码含义。",
+      "require_citation": false,
+      "source_patterns": []
+    },
+    {
+      "id": "AS-020",
+      "question": "政策刚变更，旧规则是否还有效？",
+      "mode": "refuse",
+      "coverage_reason": "当前示例库没有政策版本、生效时间和废止记录，不能判断旧规则效力。",
+      "require_citation": false,
+      "source_patterns": []
+    }
+  ]
+}

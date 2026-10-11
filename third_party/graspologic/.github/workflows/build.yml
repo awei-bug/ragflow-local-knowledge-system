@@ -1,0 +1,119 @@
+name: graspologic Build
+on:
+  push:
+    paths-ignore:
+      - '.all-contributorsrc'
+      - 'CONTRIBUTORS.md'
+    branches-ignore:
+      - 'dev'
+      - 'main'
+  pull_request:
+    paths-ignore:
+      - '.all-contributorsrc'
+      - 'CONTRIBUTORS.md'
+  workflow_call:
+
+env:
+  PYTHON_VERSION: '3.10'
+  POETRY_VERSION: '1.8.3'
+
+jobs:
+  build-reference-documentation:
+    runs-on: ubuntu-latest
+    steps:
+      - run: sudo apt-get install -y pandoc
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3.0.0
+        with:
+          poetry-version: $POETRY_VERSION
+      - name: Install dependencies
+        run: poetry install
+      - name: "Run Reference Documentation Generation"
+        run: |
+          echo "documentation" > dependencies_documentation.txt
+          poetry run pipdeptree >> dependencies_documentation.txt
+          poetry run poe docsWithTutorials
+      - name: Archive documentation version artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependencies
+          path: |
+            dependencies_documentation.txt
+      - name: Archive documentation artifacts
+        uses: actions/upload-artifact@v4
+        with:
+          name: documentation-site
+          path: |
+            docs/_build/html
+  code-format-check:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3.0.0
+        with:
+          poetry-version: $POETRY_VERSION
+      - name: Install dependencies
+        run: poetry install
+      - name: Run Format Check
+        run: poetry run poe static_checks
+  test-coverage:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{ env.PYTHON_VERSION }}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3.0.0
+        with:
+          poetry-version: $POETRY_VERSION
+      - name: Install dependencies
+        run: poetry install
+      - name: Run Test Coverage
+        run: poetry run poe coverage
+  unit-and-doc-test:
+    runs-on: ${{matrix.os}}
+    strategy:
+      matrix:
+        os: [ubuntu-latest, windows-latest, macos-latest]
+        python_version: ["3.9", "3.10", "3.11", "3.12"]
+      fail-fast: false
+    steps:
+      - uses: actions/checkout@v2
+      - name: Set up Python ${{matrix.python_version}} ${{matrix.os}}
+        uses: actions/setup-python@v2
+        with:
+          python-version: ${{matrix.python_version}}
+      - name: Install Poetry
+        uses: abatilo/actions-poetry@v3.0.0
+        with:
+          poetry-version: $POETRY_VERSION
+      - name: Install dependencies
+        run: poetry install
+      - name: Run Unit Tests and Doctests Python ${{matrix.python_version}} ${{matrix.os}}
+        run: poetry run poe tests
+      - name: Run mypy type check Python ${{matrix.python_version}} ${{matrix.os}}
+        run: poetry run poe type_check
+      - name: Generate dependency tree
+        run: |
+          export DEPS='dependencies_${{matrix.python_version}}_${{matrix.os}}.txt'
+          echo "${{matrix.python_version}} ${{matrix.os}}" > $DEPS
+          poetry run pipdeptree >> $DEPS
+        shell: bash
+      - name: Archive dependency tree
+        uses: actions/upload-artifact@v4
+        with:
+          name: dependencies-${{matrix.python_version}}-${{matrix.os}}
+          path: |
+            dependencies_${{matrix.python_version}}_${{matrix.os}}.txt

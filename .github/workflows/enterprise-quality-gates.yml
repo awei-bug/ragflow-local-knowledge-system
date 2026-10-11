@@ -1,0 +1,132 @@
+name: enterprise-quality-gates
+permissions:
+  contents: read
+
+on:
+  pull_request:
+    types: [opened, synchronize, reopened, ready_for_review]
+  push:
+    branches: [main]
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.event.pull_request.number || github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  quality-gates:
+    name: enterprise-quality-gates
+    if: ${{ github.event_name != 'pull_request' || github.event.pull_request.draft == false }}
+    runs-on: [self-hosted, ragflow-test]
+    env:
+      PR_BASE_SHA: ${{ github.event.pull_request.base.sha }}
+      PUSH_BASE_SHA: ${{ github.event.before }}
+    steps:
+      - name: Ensure workspace ownership
+        run: sudo chown -R "${USER}" "${GITHUB_WORKSPACE}"
+
+      - name: Check out code
+        uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
+
+      - name: Resolve comparison base
+        shell: bash
+        run: |
+          set -euo pipefail
+          base_sha="${PR_BASE_SHA:-${PUSH_BASE_SHA:-}}"
+          if [[ -z "${base_sha}" || "${base_sha}" =~ ^0+$ ]] || ! git cat-file -e "${base_sha}^{commit}" 2>/dev/null; then
+            base_sha="$(git rev-parse HEAD^)"
+          fi
+          echo "BASE_SHA=${base_sha}" >> "${GITHUB_ENV}"
+          echo "Comparing ${base_sha}...${GITHUB_SHA}"
+
+      - name: Reject unapproved test deletions
+        run: |
+          python3 tools/ci/check_test_deletions.py \
+            --base "${BASE_SHA}" \
+            --head "${GITHUB_SHA}" \
+            --allowlist .github/test-deletion-allowlist.txt
+
+      - name: Prepare locked Python test environment
+        run: |
+          uv sync --python 3.13 --group test --frozen
+          uv pip install --python .venv/bin/python --editable sdk/python
+
+      - name: Lint changed Python files
+        shell: bash
+        run: |
+          set -euo pipefail
+          mapfile -d '' files < <(git diff --name-only --diff-filter=ACMR -z "${BASE_SHA}...${GITHUB_SHA}" -- '*.py')
+          if (( ${#files[@]} == 0 )); then
+            echo 'No changed Python files.'
+            exit 0
+          fi
+          printf 'Checking %d changed Python file(s).\n' "${#files[@]}"
+          uvx --from 'ruff==0.12.12' ruff check "${files[@]}"
+          uvx --from 'ruff==0.12.12' ruff format --check "${files[@]}"
+
+      - name: Run security and answer-safety regressions
+        run: |
+          env -u ZHIPU_AI_API_KEY -u SILICONFLOW_API_KEY \
+            uv run --frozen python -m pytest -q \
+              test/unit_test/api/db/joint_services/test_memory_graph_service.py \
+              test/unit_test/api/apps/services/test_memory_search_with_graph.py \
+              test/unit_test/api/apps/restful_apis/test_memory_search_graph_payload.py \
+              test/unit_test/memory/services \
+              test/unit_test/enterprise_aftersales/test_acceptance_runner.py \
+              test/unit_test/test_testcases/test_optional_model_api_keys.py \
+              test/unit_test/common/test_production_security.py \
+              test/unit_test/tools/test_helm_security_contract.py \
+              test/unit_test/tools/test_quality_gate_scripts.py \
+              test/unit_test/tools/test_ragflow_backup.py \
+              test/unit_test/tools/test_validate_production_config.py
+
+      - name: Run Python unit tests with coverage
+        run: |
+          env -u ZHIPU_AI_API_KEY -u SILICONFLOW_API_KEY \
+            uv run --frozen python -m pytest -q test/unit_test \
+              --cov=agent --cov=api --cov=common --cov=deepdoc --cov=memory --cov=rag \
+              --cov-branch --cov-report=json:coverage.json
+
+      - name: Enforce changed-line coverage
+        run: |
+          uv run --frozen python tools/ci/check_diff_coverage.py \
+            --coverage-json coverage.json \
+            --base "${BASE_SHA}" \
+            --head "${GITHUB_SHA}" \
+            --minimum 80
+
+      - name: Run frontend lint, type-check, and tests when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if git diff --quiet "${BASE_SHA}...${GITHUB_SHA}" -- web; then
+            echo 'No frontend changes.'
+            exit 0
+          fi
+          npm --prefix web ci --include=dev --no-audit --no-fund
+          npm --prefix web run lint
+          npm --prefix web run type-check
+          npm --prefix web test -- --runInBand
+
+      - name: Run package-scoped Go tests when changed
+        shell: bash
+        run: |
+          set -euo pipefail
+          if ! git diff --quiet "${BASE_SHA}...${GITHUB_SHA}" -- go.mod go.sum '*.go'; then
+            uv run --frozen python ragflow_deps/download_deps.py
+            if ! git diff --quiet "${BASE_SHA}...${GITHUB_SHA}" -- go.mod go.sum; then
+              bash build.sh --test ./...
+              exit 0
+            fi
+            mapfile -t packages < <(
+              git diff --name-only --diff-filter=ACMR "${BASE_SHA}...${GITHUB_SHA}" -- '*.go' \
+                | xargs -r -n1 dirname \
+                | sort -u
+            )
+            for package in "${packages[@]}"; do
+              bash build.sh --test "./${package}"
+            done
+          else
+            echo 'No Go changes.'
+          fi

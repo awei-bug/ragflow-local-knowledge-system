@@ -1,0 +1,23 @@
+[Unit]
+Description=Encrypted RAGFlow backup
+Documentation=file:///opt/ragflow/docs/develop/backup-and-restore.md
+Requires=docker.service
+After=docker.service
+
+[Service]
+Type=oneshot
+User=ragflow-backup
+Group=docker
+WorkingDirectory=/opt/ragflow
+EnvironmentFile=/etc/ragflow/backup.env
+UMask=0077
+ExecStart=/opt/ragflow/.venv/bin/python tools/ops/ragflow_backup.py backup --output-dir /var/backups/ragflow --project docker --manage-compose --retention-days 14 --rpo-hours 24 --rto-hours 4
+NoNewPrivileges=true
+PrivateTmp=true
+ProtectHome=true
+ProtectSystem=strict
+ReadWritePaths=/opt/ragflow /var/backups/ragflow
+RestrictAddressFamilies=AF_UNIX AF_INET AF_INET6
+
+[Install]
+WantedBy=multi-user.target

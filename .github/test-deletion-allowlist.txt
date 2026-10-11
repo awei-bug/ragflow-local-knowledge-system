@@ -1,0 +1,3 @@
+# Intentionally empty.
+# A reviewed test deletion must use: repository/path | why coverage is preserved elsewhere
+# Remove the entry in the same change after the deletion is merged; stale entries fail CI.
